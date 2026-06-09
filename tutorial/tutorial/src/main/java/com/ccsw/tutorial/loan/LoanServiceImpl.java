@@ -36,27 +36,22 @@ public class LoanServiceImpl implements LoanService {
     @Override
     public void save(Long id, LoanDto dto) throws Exception {
 
-        // REGLA 1: La fecha de fin NO puede ser anterior a la de inicio
         if (dto.getEndDate().isBefore(dto.getStartDate())) {
-            throw new Exception("La fecha de fin no puede ser anterior a la fecha de inicio.");
+            throw new LoanValidationException("La fecha de fin no puede ser anterior a la fecha de inicio.");
         }
 
-        // REGLA 2: El periodo de préstamo máximo es de 14 días
         long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(dto.getStartDate(), dto.getEndDate());
         if (daysBetween > 14) {
-            throw new Exception("El periodo de préstamo máximo solo puede ser de 14 días.");
+            throw new LoanValidationException("El periodo de préstamo máximo solo puede ser de 14 días.");
         }
 
-        // REGLA 3: El mismo juego no puede estar prestado en esas fechas
         List<Loan> gameLoans = this.loanRepository.findOverlappingGameLoans(dto.getGame().getId(), dto.getStartDate(), dto.getEndDate());
         for (Loan loan : gameLoans) {
-            // Si estamos editando, ignoramos el préstamo actual para que no "choque" consigo mismo
             if (id == null || !loan.getId().equals(id)) {
-                throw new Exception("El juego ya está prestado a otro cliente en esas fechas.");
+                throw new LoanValidationException("El juego ya está prestado a otro cliente en esas fechas.");
             }
         }
 
-        // REGLA 4: Un cliente no puede tener más de 2 juegos prestados en esas fechas
         List<Loan> clientLoans = this.loanRepository.findOverlappingClientLoans(dto.getClient().getId(), dto.getStartDate(), dto.getEndDate());
         int count = 0;
         for (Loan loan : clientLoans) {
@@ -65,7 +60,7 @@ public class LoanServiceImpl implements LoanService {
             }
         }
         if (count >= 2) {
-            throw new Exception("El cliente ya tiene 2 juegos prestados en esas fechas.");
+            throw new LoanValidationException("El cliente ya tiene 2 juegos prestados en esas fechas.");
         }
 
         Loan loan;
