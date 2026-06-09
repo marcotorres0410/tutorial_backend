@@ -45,14 +45,14 @@ public class LoanServiceImpl implements LoanService {
             throw new LoanValidationException("El periodo de préstamo máximo solo puede ser de 14 días.");
         }
 
-        List<Loan> gameLoans = this.loanRepository.findOverlappingGameLoans(dto.getGame().getId(), dto.getStartDate(), dto.getEndDate());
+        List<Loan> gameLoans = this.loanRepository.findByGameIdAndEndDateGreaterThanEqualAndStartDateLessThanEqual(dto.getGame().getId(), dto.getStartDate(), dto.getEndDate());
         for (Loan loan : gameLoans) {
             if (id == null || !loan.getId().equals(id)) {
                 throw new LoanValidationException("El juego ya está prestado a otro cliente en esas fechas.");
             }
         }
 
-        List<Loan> clientLoans = this.loanRepository.findOverlappingClientLoans(dto.getClient().getId(), dto.getStartDate(), dto.getEndDate());
+        List<Loan> clientLoans = this.loanRepository.findByClientIdAndEndDateGreaterThanEqualAndStartDateLessThanEqual(dto.getClient().getId(), dto.getStartDate(), dto.getEndDate());
         int count = 0;
         for (Loan loan : clientLoans) {
             if (id == null || !loan.getId().equals(id)) {
